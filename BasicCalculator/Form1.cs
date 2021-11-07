@@ -154,6 +154,20 @@ namespace BasicCalculator
                 //Удаляем все пробелы
                 input = input.Replace(" ", "");
                 var operation = new Operation();
+                var leftSide = true;
+
+                for (int i = 0; i < input.Length; i++)
+                {
+                    var myString = "0123456789.";
+                    if (myString.Any(c=>input[i]==c))
+                    {
+                        if (leftSide)
+                        {
+                            operation.LeftSide = AddNumberPart(operation.LeftSide, input[i]);
+                        }
+                    }
+
+                }
                 return string.Empty;
             }
             catch (Exception ex)
@@ -161,6 +175,15 @@ namespace BasicCalculator
                 return $"Invalid equation.{ex.Message}";
                 throw;
             }
+        }
+
+        private string AddNumberPart(string currentNumber, char newCharacter)
+        {//Проверка на вторую точку
+            if (newCharacter=='.'&& currentNumber.Contains('.'))
+            {
+                throw new InvalidOperationException($"Number {currentNumber} already contains a . and another cannot be aded");
+            }
+            return currentNumber + newCharacter;
         }
 
         #region Private Helpers
