@@ -158,25 +158,132 @@ namespace BasicCalculator
 
                 for (int i = 0; i < input.Length; i++)
                 {
-                    var myString = "0123456789.";
-                    if (myString.Any(c=>input[i]==c))
+
+                    if ("0123456789.".Any(c => input[i] == c))
                     {
                         if (leftSide)
                         {
                             operation.LeftSide = AddNumberPart(operation.LeftSide, input[i]);
                         }
-                    }
+                        else
+                        {
+                            operation.RightSide = AddNumberPart(operation.RightSide, input[i]);
 
+                        }
+                    }
+                    else if ("+-*/".Any(c => input[i] == c))
+                    {
+                        if (!leftSide)
+                        {
+                            var operatorType = GetOperationType(input[i]);
+                            if (operation.RightSide.Length == 0)
+                            {
+                                if (operatorType != OperationType.Minus)
+                                {
+                                    throw new InvalidOperationException($"Operator (+ * / or more than one -) specified without an right side number ");
+                                }
+                                operation.RightSide += input[i];
+                            }
+                            else
+                            {
+                                operation.LeftSide = CalculateOperation(operation);
+                                operation.OperationType = operatorType;
+                                operation.RightSide = string.Empty;
+                            }
+                        }
+                        else
+                        {
+                            var operatorType = GetOperationType(input[i]);
+                            if (operation.LeftSide.Length==0)
+                            {
+                                if (operatorType!=OperationType.Minus)
+                                {
+                                    throw new InvalidOperationException($"Operator (+ * / or more than one -) specified without an left side number ");
+                                }
+                                operation.LeftSide += input[i];
+                                }
+                            else
+                                {
+                                operation.OperationType = operatorType;
+                                leftSide = false;
+                                    
+                            }
+                        }
+                    }
                 }
-                return string.Empty;
+                return CalculateOperation(operation);
+               
             }
             catch (Exception ex)
             {
                 return $"Invalid equation.{ex.Message}";
-                throw;
+                
             }
         }
+        /// <summary>
+        /// Считает <see cref="Operation"/>  и возвращает результат
+        /// </summary>
+        /// <param name="operation">операция в канукуляторе</param>
+        /// <returns></returns>
+        private string CalculateOperation(Operation operation)
+        {
+            decimal left = 0;
+            decimal right = 0;
+            if(string.IsNullOrEmpty(operation.LeftSide)||!decimal.TryParse(operation.LeftSide,out left))
+            {
+                throw new InvalidOperationException($"Left side of the operation was not a number. {operation.LeftSide}");
+            }     
+            if(string.IsNullOrEmpty(operation.RightSide)||!decimal.TryParse(operation.RightSide,out right))
+            {
+                throw new InvalidOperationException($"Left side of the operation was not a number. {operation.RightSide}");
+            }
+            try
+            {
+                switch (operation.OperationType)
+                {
+                    case OperationType.Add:
+                        return (left + right).ToString();
+                    case OperationType.Minus:
+                        return (left - right).ToString();
+                    case OperationType.Divide:
+                        return ((decimal)left / (decimal)right).ToString();
+                    case OperationType.Multiply:
+                        return (left * right).ToString();
+                    default:
+                        throw new InvalidOperationException($"Unknown operator type when calculating operation. {operation.OperationType}");
+                }
+            }
+            catch (Exception ex)
+            {
 
+                throw new InvalidOperationException($"Failed to calculate operation {operation.LeftSide} {operation.OperationType} {operation.RightSide}. {ex.Message}");
+            }
+
+
+        }
+
+        /// <summary>
+        /// Принимает символ и возвращает тип операции через  <see cref="OperationType"/> 
+        /// </summary>
+        /// <param name="character"></param>
+        /// <returns></returns>
+        private OperationType GetOperationType(char character)
+        {
+            switch (character) {
+                case '+':
+                    return OperationType.Add;
+                case '-':
+                    return OperationType.Minus;
+                case '/':
+                    return OperationType.Divide;
+                case '*':
+                    return OperationType.Multiply;
+                default:
+                    throw new InvalidOperationException($"Unknow operator type {character}");
+
+
+                }
+        }
         private string AddNumberPart(string currentNumber, char newCharacter)
         {//Проверка на вторую точку
             if (newCharacter=='.'&& currentNumber.Contains('.'))
